@@ -1,4 +1,4 @@
-﻿using HRMS.Data;
+using HRMS.Data;
 using HRMS.Interfaces;
 using HRMS.Interfaces.Services;
 using HRMS.Models;
@@ -67,7 +67,7 @@ public static class DataAccessServiceRegistration
         services.AddScoped<IPayslipDetailServices, PayslipDetailServices>();
         services.AddScoped<IPayslipServices, PayslipServices>();
         services.AddScoped<ISalaryComponentServices, SalaryComponentServices>();
-        services.AddScoped<IAccountService, AccountServic>();
+        services.AddScoped<IAccountService, AccountService>();
         services.Configure<IdentityOptions>(options => {
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
             options.Lockout.MaxFailedAccessAttempts = 5;

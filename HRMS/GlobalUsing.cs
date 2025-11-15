@@ -6,6 +6,7 @@ global using HRMS.Interfaces;
 global using HRMS.Interfaces.Services;
 global using HRMS.ViewModels.JobTitles;
 global using HRMS.ViewModels.Payroll;
+
 global using AutoMapper;
 global using HRMS.DTOs.DepartmentDTO;
 global using HRMS.DTOs.JobTitleDTO;

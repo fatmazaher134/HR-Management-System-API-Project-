@@ -1,34 +1,62 @@
-
-﻿using HRMS.ViewModels.Account;
+// 1. Using statements now reference the DTOs
+using HRMS.Dtos.Account;
+using HRMS.Interfaces.Services; // Assuming this is where IAccountService is
 
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 
 namespace HRMS.Services.Impelmentation
 {
-    public class AccountServic(UserManager<ApplicationUser> _userManager, SignInManager<ApplicationUser> _signInManager, RoleManager<IdentityRole> _roleManager) : IAccountService
+    // Note: Your class had a typo "AccountServic(" - I've corrected
+    // this to a standard constructor.
+    public class AccountService : IAccountService
     {
-        public async Task<IdentityResult> UpdateProfileAsync(ManageAccountViewModel model)
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
+
+        public AccountService(UserManager<ApplicationUser> userManager,
+                            SignInManager<ApplicationUser> signInManager,
+                            RoleManager<IdentityRole> roleManager)
         {
-           
-            var user = await _userManager.FindByIdAsync(model.UserId);
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _roleManager = roleManager;
+        }
+
+        // 2. Signature changed to use UpdateProfileDto
+
+        public async Task<IdentityResult> UpdateProfileAsync(string userId, UpdateProfileDto model)
+        {
+            // 3. User is found by the 'userId' parameter, not from the model
+            var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                model.StatusMessage = "Profile update Failed";
-
+                // 4. Removed 'model.StatusMessage'. The service layer
+                //    should not set UI properties. It just returns the result.
                 return IdentityResult.Failed(new IdentityError { Description = "User not found." });
             }
-            model.StatusMessage = "Profile updated successfully";
+
+            // 5. Removed 'model.StatusMessage'
             user.FullName = model.FullName;
             user.Email = model.Email;
             user.UserName = model.UserName;
-            var result = await _userManager.UpdateAsync(user);
-            
-            return result;
 
+            // The ViewModel had 'PhoneNumber' but your original code
+            // wasn't updating it, so I've matched that logic.
+            // If you *do* want to update it, add it to the DTO and uncomment below:
+            // user.PhoneNumber = model.PhoneNumber;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            return result;
         }
-        public async Task<SignInResult> LoginUserAsync(LoginViewModel model)
+        // 6. Signature changed to use LoginDto
+        public async Task<SignInResult> LoginUserAsync(LoginDto model)
         {
+            // The DTO property names match the ViewModel,
+            // so no other logic changes are needed here.
+
             ApplicationUser user = await _userManager.FindByEmailAsync(model.UsernameOrEmail);
             if (user == null)
             {
@@ -67,7 +95,6 @@ namespace HRMS.Services.Impelmentation
                 }
 
 
-                //create cookie idd,username [email | role]
                 await _signInManager
                     .SignInWithClaimsAsync(user, model.RememberMe, claims);
                 return SignInResult.Success;
@@ -79,7 +106,6 @@ namespace HRMS.Services.Impelmentation
                 return SignInResult.LockedOut;
             }
             return SignInResult.Failed;
-
         }
 
         public async Task LogoutUserAsync()
@@ -87,8 +113,10 @@ namespace HRMS.Services.Impelmentation
             await _signInManager.SignOutAsync();
         }
 
-        public async Task<IdentityResult> RegisterUserAsync(RegisterViewModel model)
-        {
+        // 7. Signature changed to use RegisterDto
+        public async Task<IdentityResult> RegisterUserAsync(RegisterDto model)
+            {
+            // DTO property names match, so no logic changes needed
             var user = new ApplicationUser
             {
                 UserName = model.Username,
@@ -97,8 +125,7 @@ namespace HRMS.Services.Impelmentation
                 Address = model.Address
             };
 
-
-            var result = await _userManager.CreateAsync(user, model.Password);
+        var result = await _userManager.CreateAsync(user, model.Password);
 
             if (result.Succeeded && !string.IsNullOrEmpty(model.SelectedRole))
             {
@@ -107,18 +134,19 @@ namespace HRMS.Services.Impelmentation
                 {
                     return roleResult;
                 }
-            }
-            return result;
+}
+return result;
         }
+
         public List<string> GetAllRoles()
-        {
-            List<IdentityRole> Roles =  _roleManager.Roles.ToList();
-            List<string> stringRoles= new();
-            foreach (var role in Roles)
-            {
-                stringRoles.Add(role.Name);
-            }
-            return stringRoles;
-        }
+{
+    List<IdentityRole> Roles = _roleManager.Roles.ToList();
+    List<string> stringRoles = new();
+    foreach (var role in Roles)
+    {
+        stringRoles.Add(role.Name);
+    }
+    return stringRoles;
+}
     }
 }
