@@ -49,8 +49,8 @@ namespace HRMS.Controllers
         {
             try
             {
-                var employees = await _employeeServices.GetAllAsync();
-                var dtos = _mapper.Map<IEnumerable<EmployeeListDTO>>(employees);
+                // Service returns DTOs directly
+                var dtos = await _employeeServices.GetAllAsync();
 
                 return Ok(ResponseViewModel<IEnumerable<EmployeeListDTO>>.Success(dtos, "Employees retrieved successfully"));
             }
@@ -69,9 +69,10 @@ namespace HRMS.Controllers
         {
             try
             {
-                var employee = await _employeeServices.GetByIdAsync(id);
+                // Service returns DTO directly
+                var dto = await _employeeServices.GetByIdAsync(id);
 
-                if (employee == null)
+                if (dto == null)
                 {
                     return NotFound(ResponseViewModel<EmployeeDetailsDTO>.NotFound("Employee not found"));
                 }
@@ -80,13 +81,12 @@ namespace HRMS.Controllers
                 if (User.IsInRole("Employee"))
                 {
                     var currentUserId = GetCurrentUserId();
-                    if (employee.ApplicationUserId != currentUserId)
+                    if (dto.ApplicationUserId != currentUserId)
                     {
                         return StatusCode(403, ResponseViewModel<EmployeeDetailsDTO>.Unauthorized("Access denied"));
                     }
                 }
 
-                var dto = _mapper.Map<EmployeeDetailsDTO>(employee);
                 return Ok(ResponseViewModel<EmployeeDetailsDTO>.Success(dto, "Employee details retrieved successfully"));
             }
             catch (UnauthorizedAccessException)
@@ -120,7 +120,11 @@ namespace HRMS.Controllers
                         ErrorCode.EmailAlreadyExists));
                 }
 
-                var result = await _employeeServices.RegisterEmployeeAsync(model);
+                // Map ViewModel to DTO
+                var dto = _mapper.Map<CreateEmployeeDTO>(model);
+
+                // Service handles DTO to Model mapping
+                var result = await _employeeServices.RegisterEmployeeAsync(dto);
 
                 if (result.Succeeded)
                 {
@@ -145,9 +149,10 @@ namespace HRMS.Controllers
         {
             try
             {
-                var employee = await _employeeServices.GetByIdAsync(id);
+                // Check if employee exists
+                var existingDto = await _employeeServices.GetByIdAsync(id);
 
-                if (employee == null)
+                if (existingDto == null)
                 {
                     return NotFound(ResponseViewModel<string>.NotFound("Employee not found"));
                 }
@@ -167,36 +172,32 @@ namespace HRMS.Controllers
                         ErrorCode.EmailAlreadyExists));
                 }
 
-                // Map and update
-                employee.FirstName = model.FirstName;
-                employee.LastName = model.LastName;
-                employee.Email = model.Email;
-                employee.PhoneNumber = model.PhoneNumber;
-                employee.Address = model.Address;
-                employee.DateOfBirth = model.DateOfBirth;
-                employee.HireDate = model.HireDate;
-                employee.BasicSalary = model.BasicSalary;
-                employee.DepartmentID = model.DepartmentID;
-                employee.JobTitleID = model.JobTitleID;
+                // Map ViewModel to DTO
+                var updateDto = _mapper.Map<UpdateEmployeeDTO>(model);
+                updateDto.EmployeeID = id;
 
-                var updateResult = await _employeeServices.UpdateAsync(employee);
+                // Service handles DTO to Model mapping
+                var updateResult = await _employeeServices.UpdateAsync(updateDto);
 
                 // Update ApplicationUser
-                var appUser = employee.ApplicationUser;
-                if (appUser != null)
+                if (existingDto.ApplicationUserId != null)
                 {
-                    appUser.Email = model.Email;
-                    appUser.UserName = model.Email;
-                    appUser.FullName = $"{model.FirstName} {model.LastName}";
-                    appUser.Address = model.Address;
-                    appUser.PhoneNumber = model.PhoneNumber;
-
-                    var appUserUpdateResult = await _userManager.UpdateAsync(appUser);
-
-                    if (!appUserUpdateResult.Succeeded)
+                    var appUser = await _userManager.FindByIdAsync(existingDto.ApplicationUserId);
+                    if (appUser != null)
                     {
-                        var errors = string.Join(", ", appUserUpdateResult.Errors.Select(e => e.Description));
-                        return BadRequest(ResponseViewModel<string>.Failure(errors, ErrorCode.OperationFailed));
+                        appUser.Email = model.Email;
+                        appUser.UserName = model.Email;
+                        appUser.FullName = $"{model.FirstName} {model.LastName}";
+                        appUser.Address = model.Address;
+                        appUser.PhoneNumber = model.PhoneNumber;
+
+                        var appUserUpdateResult = await _userManager.UpdateAsync(appUser);
+
+                        if (!appUserUpdateResult.Succeeded)
+                        {
+                            var errors = string.Join(", ", appUserUpdateResult.Errors.Select(e => e.Description));
+                            return BadRequest(ResponseViewModel<string>.Failure(errors, ErrorCode.OperationFailed));
+                        }
                     }
                 }
 
@@ -224,14 +225,14 @@ namespace HRMS.Controllers
         {
             try
             {
-                var employee = await _employeeServices.GetByIdAsync(id);
-                if (employee == null)
+                var existingDto = await _employeeServices.GetByIdAsync(id);
+                if (existingDto == null)
                 {
                     return NotFound(ResponseViewModel<string>.NotFound("Employee not found"));
                 }
 
                 var currentUserId = GetCurrentUserId();
-                if (employee.ApplicationUserId != currentUserId)
+                if (existingDto.ApplicationUserId != currentUserId)
                 {
                     return StatusCode(403, ResponseViewModel<string>.Unauthorized("Access denied"));
                 }
@@ -241,7 +242,12 @@ namespace HRMS.Controllers
                     return BadRequest(ResponseViewModel<string>.ValidationError("Invalid data"));
                 }
 
-                var updated = await _employeeServices.UpdateBasicInfoAsync(id, model);
+                // Map ViewModel to DTO
+                var updateDto = _mapper.Map<UpdateEmployeeBasicInfoDTO>(model);
+                updateDto.EmployeeID = id;
+
+                // Service handles DTO to Model mapping
+                var updated = await _employeeServices.UpdateBasicInfoAsync(id, updateDto);
 
                 if (!updated)
                 {
@@ -271,13 +277,13 @@ namespace HRMS.Controllers
         {
             try
             {
-                var employee = await _employeeServices.GetByIdAsync(id);
-                if (employee == null)
+                var dto = await _employeeServices.GetByIdAsync(id);
+                if (dto == null)
                 {
                     return NotFound(ResponseViewModel<string>.NotFound("Employee not found"));
                 }
 
-                var user = await _userManager.FindByIdAsync(employee.ApplicationUserId);
+                var user = await _userManager.FindByIdAsync(dto.ApplicationUserId);
                 if (user == null)
                 {
                     return NotFound(ResponseViewModel<string>.NotFound("User not found"));
@@ -309,14 +315,15 @@ namespace HRMS.Controllers
             try
             {
                 var currentUserId = GetCurrentUserId();
-                var employee = await _employeeServices.GetByUserIdAsync(currentUserId);
 
-                if (employee == null)
+                // Service returns DTO directly
+                var dto = await _employeeServices.GetByUserIdAsync(currentUserId);
+
+                if (dto == null)
                 {
                     return NotFound(ResponseViewModel<MyProfileDTO>.NotFound("Employee data not found"));
                 }
 
-                var dto = _mapper.Map<MyProfileDTO>(employee);
                 return Ok(ResponseViewModel<MyProfileDTO>.Success(dto, "Profile retrieved successfully"));
             }
             catch (UnauthorizedAccessException)

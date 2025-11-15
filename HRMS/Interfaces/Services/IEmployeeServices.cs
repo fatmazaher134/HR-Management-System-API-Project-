@@ -1,4 +1,5 @@
-﻿using HRMS.Models;
+﻿using HRMS.DTOs.Employee;
+using HRMS.Models;
 using HRMS.ViewModels.Employee;
 using Microsoft.AspNetCore.Identity;
 
@@ -6,20 +7,16 @@ namespace HRMS.Interfaces.Services
 {
     public interface IEmployeeServices
     {
-        Task<IEnumerable<Employee>> GetAllAsync();
-        Task<Employee?> GetByIdAsync(int id);
-        Task<Employee> AddAsync(Employee employee);
-        Task<bool> UpdateAsync(Employee employee);
-
-        Task<Employee?> GetByUserIdAsync(string userId);
-
-        Task<bool> UpdateBasicInfoAsync(int employeeId, EmployeeEditBasicInfoViewModel model);
-
+        Task<IEnumerable<EmployeeListDTO>> GetAllAsync();
+        Task<EmployeeDetailsDTO?> GetByIdAsync(int id);
+        Task<IdentityResult> RegisterEmployeeAsync(CreateEmployeeDTO dto);
+        Task<bool> UpdateAsync(UpdateEmployeeDTO dto);
+        Task<bool> UpdateBasicInfoAsync(int employeeId, UpdateEmployeeBasicInfoDTO dto);
         Task<bool> DeleteAsync(int id);
-        Task<IEnumerable<Employee>> GetByDepartmentIdAsync(int departmentId);
+        Task<MyProfileDTO?> GetByUserIdAsync(string userId);
+        Task<IEnumerable<EmployeeListDTO>> GetByDepartmentIdAsync(int departmentId);
         Task<decimal> GetTotalSalaryAsync(int departmentId);
         Task<bool> IsEmailExistsAsync(string email, int? excludeEmployeeId = null);
-        public Task<IdentityResult> RegisterEmployeeAsync(EmployeeFormViewModel employee);
     }
 
 }

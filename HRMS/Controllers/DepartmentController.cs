@@ -29,7 +29,7 @@ namespace HRMS.Controllers
             return employees.Select(e => new SelectListItem
             {
                 Value = e.EmployeeID.ToString(),
-                Text = e.FirstName + " " + e.LastName
+                Text = e.FullName
             });
         }
 
