@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 <Project Sdk="Microsoft.NET.Sdk.Web">
-=======
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
->>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
+
 
   <PropertyGroup>
 	  
@@ -23,12 +20,10 @@
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.1" />
 	</ItemGroup>
-<<<<<<< HEAD
-=======
+
 
 	<ItemGroup>
 	  <Folder Include="Profiles\" />
 	</ItemGroup>
 
->>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
 </Project>

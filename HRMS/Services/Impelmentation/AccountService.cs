@@ -1,18 +1,12 @@
-<<<<<<< HEAD
 // 1. Using statements now reference the DTOs
 using HRMS.Dtos.Account;
 using HRMS.Interfaces.Services; // Assuming this is where IAccountService is
-=======
 
-﻿using HRMS.ViewModels.Account;
-
->>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 
 namespace HRMS.Services.Impelmentation
 {
-<<<<<<< HEAD
     // Note: Your class had a typo "AccountServic(" - I've corrected
     // this to a standard constructor.
     public class AccountService : IAccountService
@@ -62,31 +56,7 @@ namespace HRMS.Services.Impelmentation
         {
             // The DTO property names match the ViewModel,
             // so no other logic changes are needed here.
-=======
-    public class AccountServic(UserManager<ApplicationUser> _userManager, SignInManager<ApplicationUser> _signInManager, RoleManager<IdentityRole> _roleManager) : IAccountService
-    {
-        public async Task<IdentityResult> UpdateProfileAsync(ManageAccountViewModel model)
-        {
-           
-            var user = await _userManager.FindByIdAsync(model.UserId);
-            if (user == null)
-            {
-                model.StatusMessage = "Profile update Failed";
 
-                return IdentityResult.Failed(new IdentityError { Description = "User not found." });
-            }
-            model.StatusMessage = "Profile updated successfully";
-            user.FullName = model.FullName;
-            user.Email = model.Email;
-            user.UserName = model.UserName;
-            var result = await _userManager.UpdateAsync(user);
-            
-            return result;
-
-        }
-        public async Task<SignInResult> LoginUserAsync(LoginViewModel model)
-        {
->>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
             ApplicationUser user = await _userManager.FindByEmailAsync(model.UsernameOrEmail);
             if (user == null)
             {
@@ -124,19 +94,11 @@ namespace HRMS.Services.Impelmentation
                     claims.Add(new Claim(ClaimTypes.Role, role));
                 }
 
-<<<<<<< HEAD
-=======
 
-                //create cookie idd,username [email | role]
->>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
                 await _signInManager
                     .SignInWithClaimsAsync(user, model.RememberMe, claims);
                 return SignInResult.Success;
             }
-<<<<<<< HEAD
-
-=======
->>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
             await _userManager.AccessFailedAsync(user);
 
             if (await _userManager.IsLockedOutAsync(user))
@@ -144,10 +106,6 @@ namespace HRMS.Services.Impelmentation
                 return SignInResult.LockedOut;
             }
             return SignInResult.Failed;
-<<<<<<< HEAD
-=======
-
->>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
         }
 
         public async Task LogoutUserAsync()
@@ -155,15 +113,10 @@ namespace HRMS.Services.Impelmentation
             await _signInManager.SignOutAsync();
         }
 
-<<<<<<< HEAD
         // 7. Signature changed to use RegisterDto
         public async Task<IdentityResult> RegisterUserAsync(RegisterDto model)
             {
             // DTO property names match, so no logic changes needed
-=======
-        public async Task<IdentityResult> RegisterUserAsync(RegisterViewModel model)
-        {
->>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
             var user = new ApplicationUser
             {
                 UserName = model.Username,
@@ -172,12 +125,7 @@ namespace HRMS.Services.Impelmentation
                 Address = model.Address
             };
 
-<<<<<<< HEAD
         var result = await _userManager.CreateAsync(user, model.Password);
-=======
-
-            var result = await _userManager.CreateAsync(user, model.Password);
->>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
 
             if (result.Succeeded && !string.IsNullOrEmpty(model.SelectedRole))
             {
@@ -186,7 +134,6 @@ namespace HRMS.Services.Impelmentation
                 {
                     return roleResult;
                 }
-<<<<<<< HEAD
 }
 return result;
         }
@@ -201,20 +148,5 @@ return result;
     }
     return stringRoles;
 }
-=======
-            }
-            return result;
-        }
-        public List<string> GetAllRoles()
-        {
-            List<IdentityRole> Roles =  _roleManager.Roles.ToList();
-            List<string> stringRoles= new();
-            foreach (var role in Roles)
-            {
-                stringRoles.Add(role.Name);
-            }
-            return stringRoles;
-        }
->>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
     }
 }
