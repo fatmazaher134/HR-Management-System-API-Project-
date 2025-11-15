@@ -6,6 +6,7 @@ namespace HRMS.Controllers
 {
     [ApiController]
     [Route("api/SalaryComponents")] 
+    [Authorize(Roles = "Admin,HR")]
     public class SalaryComponentsController : ControllerBase 
     {
         private readonly ISalaryComponentServices _service;

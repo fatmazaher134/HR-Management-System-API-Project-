@@ -7,6 +7,7 @@ namespace HRMS.Controllers
     //[Authorize(Roles = "Admin,HR,Employee")]
     [Route("api/Department")] 
     [ApiController]
+    [Authorize]
     public class DepartmentController : ControllerBase
     {
         private readonly IDepartmentServices _deptService;
@@ -25,16 +26,21 @@ namespace HRMS.Controllers
 
         // GET: /api/department
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<ActionResult<IEnumerable<DepartmentViewModel>>> GetDepartments()
         {
             var dtos = await _deptService.GetAllAsync();
-            var viewModels = dtos.Select(d => _mapper.Map<DepartmentViewModel>(d)).ToList();
+            var viewModels = _mapper.Map<IEnumerable<DepartmentViewModel>>(dtos);
 
             return Ok(viewModels);
+
+
+            
         }
 
         // GET: /api/department/5
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<ActionResult<DepartmentViewModel>> GetDepartment(int id)
         {
             var dto = await _deptService.GetByIdAsync(id);
@@ -49,7 +55,7 @@ namespace HRMS.Controllers
 
         // POST: /api/department
         [HttpPost]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<DepartmentViewModel>> CreateDepartment([FromBody] DepartmentFormViewModel viewModel)
         {
             if (!ModelState.IsValid)
@@ -68,7 +74,7 @@ namespace HRMS.Controllers
 
         // PUT: /api/department/5
         [HttpPut("{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateDepartment(int id, [FromBody] DepartmentFormViewModel viewModel)
         {
             if (!ModelState.IsValid)
@@ -90,7 +96,7 @@ namespace HRMS.Controllers
 
         // DELETE: /api/department/5
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteDepartment(int id)
         {
             var success = await _deptService.DeleteAsync(id);
@@ -103,7 +109,8 @@ namespace HRMS.Controllers
         }
 
 
-        [HttpGet("Employee/{EmpId}")]
+        [HttpGet("Employee/{EmpId}")] 
+        [Authorize(Roles = "Admin,HR,Employee")]
         public async Task<ActionResult<DepartmentViewModel>> GetDepartmentByEmployeeId(int EmpId)
         {
             var dto = await _deptService.GetByEmpIdAsync(EmpId);

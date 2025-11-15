@@ -1,4 +1,6 @@
-﻿using HRMS.DependencyInjection;
+﻿using HRMS.Data;
+using HRMS.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 namespace HRMS
@@ -15,7 +17,9 @@ namespace HRMS
             // Add custom services
             builder.Services.AddDataAccessServices(builder.Configuration);
             builder.Services.AddAutoMapper(typeof(Program).Assembly);
-
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("CS"))
+            );
 
             builder.Services.AddSwaggerGen(options =>
             {

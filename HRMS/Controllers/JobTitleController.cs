@@ -5,7 +5,7 @@ namespace HRMS.Controllers
 {
     [Route("api/JobTitle")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class JobTitleController : ControllerBase
     {
         private readonly IJobTitleServices _jobTitleService;
@@ -19,7 +19,7 @@ namespace HRMS.Controllers
 
         // GET: /api/JobTitle
         [HttpGet]
-        //[Authorize(Roles = "Admin,HR,Employee")]
+        [Authorize(Roles = "Admin,HR,Employee")]
         public async Task<ActionResult<IEnumerable<JobTitleViewModel>>> GetJobTitles()
         {
             var dtos = await _jobTitleService.GetAllAsync();
@@ -31,7 +31,7 @@ namespace HRMS.Controllers
 
         // GET: /api/JobTitle/5
         [HttpGet("{id}")]
-        //[Authorize(Roles = "Admin,HR,Employee")]
+        [Authorize(Roles = "Admin,HR,Employee")]
         public async Task<ActionResult<JobTitleViewModel>> GetJobTitle(int id)
         {
             var dto = await _jobTitleService.GetByIdAsync(id);
@@ -46,7 +46,7 @@ namespace HRMS.Controllers
 
         // POST: /api/JobTitle
         [HttpPost]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<JobTitleViewModel>> CreateJobTitle([FromBody] JobTitleFormViewModel viewModel)
         {
             if (!ModelState.IsValid)
@@ -65,7 +65,7 @@ namespace HRMS.Controllers
 
         // PUT: /api/JobTitle/5
         [HttpPut("{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateJobTitle(int id, [FromBody] JobTitleFormViewModel viewModel)
         {
             if (!ModelState.IsValid)
@@ -86,7 +86,7 @@ namespace HRMS.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteJobTitle(int id)
         {
             var success = await _jobTitleService.DeleteAsync(id);

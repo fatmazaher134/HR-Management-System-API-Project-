@@ -8,7 +8,7 @@ namespace HRMS.Controllers
 {
     [Route("api/Payroll")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class PayrollController : ControllerBase
     {
         private readonly IPayrollService _payrollService;
@@ -27,7 +27,7 @@ namespace HRMS.Controllers
 
         // GET: api/Payroll
         [HttpGet]
-        //[Authorize(Roles = "Admin, HR")]
+        [Authorize(Roles = "Admin, HR")]
         public async Task<ActionResult<IEnumerable<PayslipSummaryViewModel>>> Index()
         {
             var dtos = await _payrollService.GetAllAsync();
@@ -37,7 +37,7 @@ namespace HRMS.Controllers
 
         // GET: api/Payroll/MyPayslips
         [HttpGet("MyPayslips")]
-        //[Authorize(Roles = "HR,Employee")]
+        [Authorize(Roles = "HR,Employee")]
         public async Task<ActionResult<IEnumerable<PayslipViewModel>>> MyPayslips()
         {
             var userId = GetCurrentUserId();
@@ -48,7 +48,7 @@ namespace HRMS.Controllers
 
         // GET: api/Payroll/Details/5 (للـ Admin/HR)
         [HttpGet("Details/{id}")]
-        //[Authorize(Roles = "Admin, HR")]
+        [Authorize(Roles = "Admin, HR")]
         public async Task<ActionResult<PayslipDetailsViewModel>> Details(int id)
         {
             var dto = await _payrollService.GetPayslipDetailsAsync(id);
@@ -60,7 +60,7 @@ namespace HRMS.Controllers
 
         // GET: api/Payroll/MyDetails/5 (للـ Employee)
         [HttpGet("MyDetails/{id}")]
-        //[Authorize(Roles = "HR,Employee")]
+        [Authorize(Roles = "HR,Employee")]
         public async Task<ActionResult<PayslipDetailsViewModel>> MyDetails(int id)
         {
             var userId = GetCurrentUserId();
@@ -73,7 +73,7 @@ namespace HRMS.Controllers
 
         // POST: api/Payroll/Generate
         [HttpPost("Generate")]
-        //[Authorize(Roles = "Admin, HR")]
+        [Authorize(Roles = "Admin, HR")]
         public async Task<IActionResult> Generate([FromBody] GeneratePayrollViewModel viewModel)
         {
             if (!ModelState.IsValid)
@@ -95,7 +95,7 @@ namespace HRMS.Controllers
 
         // DELETE: api/Payroll/5
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Admin, HR")]
+        [Authorize(Roles = "Admin, HR")]
         public async Task<IActionResult> Delete(int id)
         {
             try
