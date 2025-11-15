@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace HRMS.Controllers
 {
@@ -27,11 +28,9 @@ namespace HRMS.Controllers
         public async Task<ActionResult<IEnumerable<DepartmentViewModel>>> GetDepartments()
         {
             var dtos = await _deptService.GetAllAsync();
-
-            var viewModels = _mapper.Map<IEnumerable<DepartmentViewModel>>(dtos);
+            var viewModels = dtos.Select(d => _mapper.Map<DepartmentViewModel>(d)).ToList();
 
             return Ok(viewModels);
-
         }
 
         // GET: /api/department/5
