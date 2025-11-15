@@ -1,12 +1,21 @@
+<<<<<<< HEAD
 ﻿using HRMS.Interfaces.Services;
 using HRMS.Models;
 using HRMS.ViewModels.Employee;
+=======
+﻿using AutoMapper;
+using HRMS.DTOs.LeaveRequest;
+using HRMS.Interfaces;
+using HRMS.Interfaces.Services;
+using HRMS.Models;
+>>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
 
 namespace HRMS.Services.Impelmentation
 {
     public class LeaveRequestServices : ILeaveRequestServices
     {
         private readonly IUnitOfWork _unitOfWork;
+<<<<<<< HEAD
 
         public LeaveRequestServices(IUnitOfWork unitOfWork)
         {
@@ -14,10 +23,22 @@ namespace HRMS.Services.Impelmentation
         }
 
         public async Task<IEnumerable<LeaveRequestViewModel>> GetAllAsync()
+=======
+        private readonly IMapper _mapper;
+
+        public LeaveRequestServices(IUnitOfWork unitOfWork, IMapper mapper)
+        {
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+        }
+
+        public async Task<IEnumerable<LeaveRequestDto>> GetAllAsync()
+>>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
         {
             var requests = await _unitOfWork.LeaveRequest.FindAllAsync(
                 includes: new[] { "Employee", "LeaveType" });
 
+<<<<<<< HEAD
             return requests.Select(r => new LeaveRequestViewModel
             {
                 LeaveRequestID = r.LeaveRequestID,
@@ -65,6 +86,39 @@ namespace HRMS.Services.Impelmentation
                 Comments = model.Comments,
                 Status = "Pending"
             };
+=======
+            return _mapper.Map<IEnumerable<LeaveRequestDto>>(requests);
+        }
+
+        public async Task<IEnumerable<LeaveRequestDto>> GetMyRequestsAsync(string userId)
+        {
+            // var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == userId);
+            // if (emp == null) return Enumerable.Empty<LeaveRequestDto>();
+
+            var tempTestEmployeeId = 1; 
+
+            var requests = await _unitOfWork.LeaveRequest.FindAllAsync(
+                // r => r.EmployeeID == emp.EmployeeID,
+                r => r.EmployeeID == tempTestEmployeeId, 
+                includes: new[] { "LeaveType" });
+
+            return _mapper.Map<IEnumerable<LeaveRequestDto>>(requests);
+        }
+
+        public async Task<bool> CreateAsync(CreateLeaveRequestDto model, string userId)
+        {
+            // var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == userId);
+            // if (emp == null) return false;
+
+            var tempTestEmployeeId = 1; 
+
+            var entity = _mapper.Map<LeaveRequest>(model);
+
+            // entity.EmployeeID = emp.EmployeeID;
+            entity.EmployeeID = tempTestEmployeeId; 
+            entity.Status = "Pending";
+            entity.RequestDate = DateTime.UtcNow;
+>>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
 
             await _unitOfWork.LeaveRequest.AddAsync(entity);
             await _unitOfWork.SaveChangesAsync();
@@ -114,8 +168,16 @@ namespace HRMS.Services.Impelmentation
 
         public async Task<bool> DeleteAsync(int id, string userId)
         {
+<<<<<<< HEAD
             var request = await _unitOfWork.LeaveRequest
                 .FindAsync(lr => lr.LeaveRequestID == id && lr.Employee.ApplicationUserId == userId);
+=======
+            // var request = await _unitOfWork.LeaveRequest
+            //     .FindAsync(lr => lr.LeaveRequestID == id && lr.Employee.ApplicationUserId == userId);
+
+            
+            var request = await _unitOfWork.LeaveRequest.GetByIdAsync(id);
+>>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
 
             if (request == null)
                 return false;
@@ -124,6 +186,9 @@ namespace HRMS.Services.Impelmentation
             await _unitOfWork.SaveChangesAsync();
             return true;
         }
+<<<<<<< HEAD
 
+=======
+>>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
     }
 }

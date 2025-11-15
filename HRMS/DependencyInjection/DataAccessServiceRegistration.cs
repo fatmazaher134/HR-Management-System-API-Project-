@@ -66,7 +66,11 @@ public static class DataAccessServiceRegistration
         services.AddScoped<IPayslipDetailServices, PayslipDetailServices>();
         services.AddScoped<IPayslipServices, PayslipServices>();
         services.AddScoped<ISalaryComponentServices, SalaryComponentServices>();
+<<<<<<< HEAD
         services.AddScoped<IAccountService, AccountService>();
+=======
+        services.AddScoped<IAccountService, AccountServic>();
+>>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
         services.Configure<IdentityOptions>(options => {
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
             options.Lockout.MaxFailedAccessAttempts = 5;

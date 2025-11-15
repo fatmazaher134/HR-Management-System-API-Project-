@@ -5,6 +5,7 @@ namespace HRMS.Services.Impelmentation
     public class DepartmentServices : IDepartmentServices
     {
         private readonly IUnitOfWork _unitOfWork;
+<<<<<<< HEAD
 
         public DepartmentServices(IUnitOfWork unitOfWork)
         {
@@ -47,6 +48,48 @@ namespace HRMS.Services.Impelmentation
             {
                 return false;
             }
+=======
+        private readonly IMapper _mapper;
+        public DepartmentServices(IUnitOfWork unitOfWork, IMapper mapper)
+        {
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+        }
+
+        public async Task<IEnumerable<DepartmentDto>> GetAllAsync()
+        {
+            var departments = await _unitOfWork.Department.GetAllAsync();
+            return _mapper.Map<IEnumerable<DepartmentDto>>(departments);
+        }
+
+        public async Task<DepartmentDto?> GetByIdAsync(int id)
+        {
+            var department = await _unitOfWork.Department.GetByIdAsync(id);
+            if (department == null) return null;
+            return _mapper.Map<DepartmentDto>(department);
+        }
+
+        public async Task<DepartmentDto> AddAsync(DepartmentFormDto dto)
+        {
+            var department = _mapper.Map<Department>(dto);
+
+            await _unitOfWork.Department.AddAsync(department);
+            await _unitOfWork.SaveChangesAsync();
+
+            return _mapper.Map<DepartmentDto>(department);
+        }
+
+        public async Task<bool> UpdateAsync(int id, DepartmentFormDto dto)
+        {
+            var departmentFromDb = await _unitOfWork.Department.GetByIdAsync(id);
+            if (departmentFromDb == null) return false;
+
+            _mapper.Map(dto, departmentFromDb);
+
+            await _unitOfWork.Department.UpdateAsync(departmentFromDb);
+            await _unitOfWork.SaveChangesAsync();
+            return true;
+>>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -69,5 +112,18 @@ namespace HRMS.Services.Impelmentation
                 return false;
             }
         }
+<<<<<<< HEAD
+=======
+
+        public async Task<DepartmentDto?> GetByEmpIdAsync(int Empid)
+        {
+            var EmployeeWithDepartment = await _unitOfWork.Employee.FindAsync(criteria: e => e.EmployeeID == Empid,
+                includes: new[] { "Department" }
+                );
+            var department = EmployeeWithDepartment.Department;
+            if (department == null) return null;
+            return _mapper.Map<DepartmentDto>(department);
+        }
+>>>>>>> ff52cd07578c21d0f60fe695abe4524e021a4e1e
     }
 }
