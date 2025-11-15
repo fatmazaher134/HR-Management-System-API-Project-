@@ -1,15 +1,16 @@
-﻿using HRMS.Interfaces.Services; 
+﻿using HRMS.Interfaces.Services;
 using HRMS.Models;
-using HRMS.ViewModels;
-using HRMS.ViewModels.Dashboard;
+using HRMS.Dtos.Dashboard; // Updated namespace
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
 
-namespace HRMS.Controllers
+namespace HRMS.Controllers.Api
 {
-    public class HomeController : Controller
+    [Authorize] // 1. Authorization is handled at the controller level
+    [ApiController] // 2. Identifies this as an API controller
+    [Route("api/[controller]")] // 3. Sets the route to /api/dashboard
+    public class HomeController : ControllerBase // 4. Inherits from ControllerBase
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEmployeeServices _employeeServices;
@@ -26,75 +27,73 @@ namespace HRMS.Controllers
             _leaveRequestServices = leaveRequestServices;
         }
 
-        public async Task<IActionResult> Index()
+        [HttpGet] // 5. This action responds to HTTP GET /api/dashboard
+        public async Task<ActionResult<DashboardDto>> GetDashboardData()
         {
-            if (!User.Identity.IsAuthenticated)
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            // 6. We no longer check User.Identity.IsAuthenticated.
+            //    The [Authorize] attribute handles it. If not authenticated,
+            //    the API will automatically return a 401 Unauthorized.
 
             var user = await _userManager.GetUserAsync(User);
-            var model = new DashboardViewModel(); 
+            if (user == null)
+            {
+                // This should rarely happen if [Authorize] is active, but it's good practice
+                return Unauthorized();
+            }
+
+            var dto = new DashboardDto();
 
             bool isHR = await _userManager.IsInRoleAsync(user, "HR") ||
                         await _userManager.IsInRoleAsync(user, "Admin");
 
             if (isHR)
             {
-
                 var allEmployees = await _employeeServices.GetAllAsync();
-                model.TotalEmployees = allEmployees.Count();
+                dto.TotalEmployees = allEmployees.Count();
 
                 var allRequests = await _leaveRequestServices.GetAllAsync();
-                model.PendingLeaveRequests = allRequests.Count(r => r.Status == "Pending");
+                dto.PendingLeaveRequests = allRequests.Count(r => r.Status == "Pending");
+
+                // You could add logic for NewHiresThisMonth here
+                // dto.NewHiresThisMonth = ...
             }
             else
             {
-
-
                 const int annualLeaveBalance = 21;
                 int currentYear = DateTime.Now.Year;
 
                 var employee = await _employeeServices.GetByUserIdAsync(user.Id);
 
-                if (employee != null)
+                if (employee == null)
                 {
-                    var myRequests = await _leaveRequestServices.GetMyRequestsAsync(user.Id);
-
-                    var approvedRequestsThisYear = myRequests
-                        .Where(r => r.Status == "Approved" && r.StartDate.Year == currentYear)
-                        .ToList();
-
-                    int totalDaysUsed = 0;
-                    foreach (var req in approvedRequestsThisYear)
-                    {
-                        totalDaysUsed += (req.EndDate - req.StartDate).Days ;
-                    }
-
-
-                    model.LeaveBalance = annualLeaveBalance - totalDaysUsed;
-
-                    model.ApprovedLeavesThisYear = approvedRequestsThisYear.Count();
+                    // 7. Return a 404 Not Found if the user is authenticated 
+                    //    but has no corresponding employee record.
+                    return NotFound("Employee record not found for this user.");
                 }
-                else
+
+                var myRequests = await _leaveRequestServices.GetMyRequestsAsync(user.Id);
+
+                var approvedRequestsThisYear = myRequests
+                    .Where(r => r.Status == "Approved" && r.StartDate.Year == currentYear)
+                    .ToList();
+
+                int totalDaysUsed = 0;
+                foreach (var req in approvedRequestsThisYear)
                 {
-                    model.LeaveBalance = annualLeaveBalance;
-                    model.ApprovedLeavesThisYear = 0;
+                    // 8. Fixed calculation: (EndDate - StartDate).Days + 1
+                    //    This correctly counts inclusive days. (e.g., Nov 15 to Nov 15 is 1 day)
+                    totalDaysUsed += (int)(req.EndDate.Date - req.StartDate.Date).TotalDays + 1;
                 }
+
+                dto.LeaveBalance = annualLeaveBalance - totalDaysUsed;
+                dto.ApprovedLeavesThisYear = approvedRequestsThisYear.Count();
             }
 
-            return View(model);
+            // 9. Return an HTTP 200 OK with the DTO as JSON
+            return Ok(dto);
         }
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+        // 10. The Privacy() and Error() actions are removed as they are 
+        //     specific to MVC views, not a data API.
     }
 }

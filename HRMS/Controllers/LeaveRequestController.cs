@@ -10,7 +10,7 @@ namespace HRMS.Controllers.Api
 {
     [ApiController]
     [Route("api/LeaveRequest")]
-    //[Authorize]
+    [Authorize]
     public class LeaveRequestController : ControllerBase
     {
         private readonly ILeaveRequestServices _service;
@@ -28,26 +28,26 @@ namespace HRMS.Controllers.Api
         }
 
         [HttpGet("GetLeaveRequests/")]
-        //[Authorize(Roles = "Admin,Employee,HR")]
+        [Authorize(Roles = "Admin,Employee,HR")]
         public async Task<ActionResult<IEnumerable<LeaveRequestDto>>> GetLeaveRequests()
         {
-            // var user = await _userManager.GetUserAsync(User);
+             var user = await _userManager.GetUserAsync(User);
             IEnumerable<LeaveRequestDto> dtos;
 
-            // if (User.IsInRole("HR") || User.IsInRole("Admin"))
-            // {
-            dtos = await _service.GetAllAsync();
-            // }
-            // else // Employee
-            // {
-            //     dtos = await _service.GetMyRequestsAsync(user.Id);
-            // }
+             if (User.IsInRole("HR") || User.IsInRole("Admin"))
+            {
+                dtos = await _service.GetAllAsync();
+            }
+            else // Employee
+            {
+                dtos = await _service.GetMyRequestsAsync(user.Id);
+            }
 
             return Ok(dtos);
         }
 
         [HttpGet("LeaveTypes")]
-        //[Authorize(Roles = "Admin,HR,Employee")]
+        [Authorize(Roles = "Admin,HR,Employee")]
         public async Task<IActionResult> GetLeaveTypes()
         {
             var leaveTypes = await _unitOfWork.LeaveType.GetAllAsync();
@@ -55,7 +55,7 @@ namespace HRMS.Controllers.Api
         }
 
         [HttpPost]
-        //[Authorize(Roles = "Admin,HR,Employee")]
+        [Authorize(Roles = "Admin,HR,Employee")]
         public async Task<IActionResult> CreateLeaveRequest([FromBody] CreateLeaveRequestDto createDto)
         {
             if (!ModelState.IsValid)
@@ -63,7 +63,7 @@ namespace HRMS.Controllers.Api
                 return BadRequest(ModelState);
             }
 
-            // var user = await _userManager.GetUserAsync(User);
+             var user = await _userManager.GetUserAsync(User);
 
             var tempTestUserId = "YOUR_TEST_USER_ID_FROM_DATABASE";
 
@@ -78,12 +78,12 @@ namespace HRMS.Controllers.Api
         }
 
         [HttpPut("Approve/{id}")]
-        //[Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Approve(int id)
         {
-            // var user = await _userManager.GetUserAsync(User);
-            // var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == user.Id);
-            // if (emp == null) return Unauthorized();
+             var user = await _userManager.GetUserAsync(User);
+            var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == user.Id);
+            if (emp == null) return Unauthorized();
 
             var tempTestHrEmployeeId = 1; // افترض أن EmployeeID 1 هو HR
 
@@ -94,12 +94,12 @@ namespace HRMS.Controllers.Api
         }
 
         [HttpPut("Reject/{id}")]
-        //[Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Reject(int id, [FromBody] string? comments)
         {
-            // var user = await _userManager.GetUserAsync(User);
-            // var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == user.Id);
-            // if (emp == null) return Unauthorized();
+             var user = await _userManager.GetUserAsync(User);
+            var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == user.Id);
+            if (emp == null) return Unauthorized();
 
             var tempTestHrEmployeeId = 1; // افترض أن EmployeeID 1 هو HR
 
@@ -110,10 +110,10 @@ namespace HRMS.Controllers.Api
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Admin,HR,Employee")]
+        [Authorize(Roles = "Admin,HR,Employee")]
         public async Task<IActionResult> Delete(int id)
         {
-            // var userId = _userManager.GetUserId(User);
+             var userId = _userManager.GetUserId(User);
 
             var tempTestUserId = "YOUR_TEST_USER_ID_FROM_DATABASE";
 

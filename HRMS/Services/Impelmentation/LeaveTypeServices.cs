@@ -1,42 +1,64 @@
-﻿using HRMS.Interfaces.Services;
+﻿using AutoMapper;
+using HRMS.DTOs.LeaveType;
+using HRMS.Interfaces;
+using HRMS.Interfaces.Services;
 using HRMS.Models;
 
-namespace HRMS.Services.Impelmentation
+namespace HRMS.Services.Implementation
 {
     public class LeaveTypeServices : ILeaveTypeServices
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public LeaveTypeServices(IUnitOfWork unitOfWork)
+        public LeaveTypeServices(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         // Get all leave types
-        public async Task<IEnumerable<LeaveType>> GetAllAsync()
+        public async Task<IEnumerable<LeaveTypeDTO>> GetAllAsync()
         {
-            return await _unitOfWork.LeaveType.GetAllAsync();
+            var leaveTypes = await _unitOfWork.LeaveType.GetAllAsync();
+
+            // Map Model to DTO
+            return _mapper.Map<IEnumerable<LeaveTypeDTO>>(leaveTypes);
         }
 
         // Get leave type by ID
-        public async Task<LeaveType?> GetByIdAsync(int id)
+        public async Task<LeaveTypeDTO?> GetByIdAsync(int id)
         {
-            return await _unitOfWork.LeaveType.GetByIdAsync(id);
+            var leaveType = await _unitOfWork.LeaveType.GetByIdAsync(id);
+
+            if (leaveType == null)
+                return null;
+
+            // Map Model to DTO
+            return _mapper.Map<LeaveTypeDTO>(leaveType);
         }
 
         // Add new leave type
-        public async Task<LeaveType> AddAsync(LeaveType leaveType)
+        public async Task<LeaveTypeDTO> AddAsync(CreateLeaveTypeDTO dto)
         {
+            // Map DTO to Model
+            var leaveType = _mapper.Map<LeaveType>(dto);
+
             await _unitOfWork.LeaveType.AddAsync(leaveType);
             await _unitOfWork.SaveChangesAsync();
-            return leaveType;
+
+            // Map Model back to DTO
+            return _mapper.Map<LeaveTypeDTO>(leaveType);
         }
 
         // Update leave type
-        public async Task<bool> UpdateAsync(LeaveType leaveType)
+        public async Task<bool> UpdateAsync(UpdateLeaveTypeDTO dto)
         {
             try
             {
+                // Map DTO to Model
+                var leaveType = _mapper.Map<LeaveType>(dto);
+
                 await _unitOfWork.LeaveType.UpdateAsync(leaveType);
                 await _unitOfWork.SaveChangesAsync();
                 return true;
@@ -47,11 +69,10 @@ namespace HRMS.Services.Impelmentation
             }
         }
 
-        
+        // Delete leave type
         public async Task<bool> DeleteAsync(int id)
         {
             var leaveType = await _unitOfWork.LeaveType.GetByIdAsync(id);
-
             if (leaveType == null)
                 return false;
 

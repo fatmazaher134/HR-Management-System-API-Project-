@@ -1,219 +1,177 @@
-﻿using HRMS.ViewModels.LeaveType;
+﻿using AutoMapper;
+using HRMS.DTOs.LeaveType;
+using HRMS.Interfaces.Services;
+using HRMS.Models;
+using HRMS.Models.Enums;
+using HRMS.ViewModels;
+using HRMS.ViewModels.LeaveType;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HRMS.Controllers
 {
-
+    [Route("api/[controller]")]
+    [ApiController]
     [Authorize]
-    public class LeaveTypeController : Controller
+    public class LeaveTypeController : ControllerBase
     {
         private readonly ILeaveTypeServices _leaveTypeServices;
+        private readonly IMapper _mapper;
 
-        public LeaveTypeController(ILeaveTypeServices leaveTypeServices)
+        public LeaveTypeController(ILeaveTypeServices leaveTypeServices, IMapper mapper)
         {
             _leaveTypeServices = leaveTypeServices;
+            _mapper = mapper;
         }
 
-       
-        // INDEX - List all leave types
-        
+        // GET: api/LeaveType
+        [HttpGet]
         [Authorize(Roles = "Admin,HR,Employee")]
-        [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<ActionResult<ResponseViewModel<IEnumerable<LeaveTypeDTO>>>> GetAll()
         {
-            var leaveTypes = await _leaveTypeServices.GetAllAsync();
-
-            var model = leaveTypes.Select(lt => new LeaveTypeViewModel
-            {
-                LeaveTypeID = lt.LeaveTypeID,
-                TypeName = lt.TypeName,
-                DefaultBalance = lt.DefaultBalance
-            }).ToList();
-
-            return View(model);
-        }
-
-       
-        // DETAILS - View leave type details
-       
-        [Authorize(Roles = "Admin,HR,Employee")]
-        [HttpGet]
-        public async Task<IActionResult> Details(int id)
-        {
-            var leaveType = await _leaveTypeServices.GetByIdAsync(id);
-
-            if (leaveType == null)
-                return NotFound();
-
-            var model = new LeaveTypeViewModel
-            {
-                LeaveTypeID = leaveType.LeaveTypeID,
-                TypeName = leaveType.TypeName,
-                DefaultBalance = leaveType.DefaultBalance
-            };
-
-            return View(model);
-        }
-
-       
-        // CREATE - Add new leave type (GET)
-       
-        [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public IActionResult Create()
-        {
-            return View(new LeaveTypeFormViewModel());
-        }
-
-      
-        // CREATE - Add new leave type (POST)
-     
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(LeaveTypeFormViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var leaveType = new LeaveType
-            {
-                TypeName = model.TypeName,
-                DefaultBalance = model.DefaultBalance
-            };
-
             try
             {
-                await _leaveTypeServices.AddAsync(leaveType);
-                TempData["Success"] = "Leave type created successfully";
-                return RedirectToAction(nameof(Index));
+                // Service returns DTOs directly
+                var dtos = await _leaveTypeServices.GetAllAsync();
+
+                return Ok(ResponseViewModel<IEnumerable<LeaveTypeDTO>>.Success(dtos, "Leave types retrieved successfully"));
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", "An error occurred while creating the leave type");
-                return View(model);
+                return StatusCode(500, ResponseViewModel<IEnumerable<LeaveTypeDTO>>.Failure(
+                    "An error occurred while retrieving leave types",
+                    ErrorCode.ServerError));
             }
         }
 
-      
-        // EDIT - Edit leave type (GET)
-       
-        [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public async Task<IActionResult> Edit(int id)
+        // GET: api/LeaveType/5
+        [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,HR,Employee")]
+        public async Task<ActionResult<ResponseViewModel<LeaveTypeDTO>>> GetById(int id)
         {
-            var leaveType = await _leaveTypeServices.GetByIdAsync(id);
-
-            if (leaveType == null)
-                return NotFound();
-
-            var model = new LeaveTypeFormViewModel
-            {
-                LeaveTypeID = leaveType.LeaveTypeID,
-                TypeName = leaveType.TypeName,
-                DefaultBalance = leaveType.DefaultBalance
-            };
-
-            return View(model);
-        }
-
-       
-        // EDIT - Edit leave type (POST)
-      
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, LeaveTypeFormViewModel model)
-        {
-            //if (id != model.LeaveTypeID)
-            //    return BadRequest();
-
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var leaveType = new LeaveType
-            {
-                LeaveTypeID = model.LeaveTypeID,
-                TypeName = model.TypeName,
-                DefaultBalance = model.DefaultBalance
-            };
-
             try
             {
-                var result = await _leaveTypeServices.UpdateAsync(leaveType);
+                // Service returns DTO directly
+                var dto = await _leaveTypeServices.GetByIdAsync(id);
 
-                if (result)
+                if (dto == null)
                 {
-                    TempData["Success"] = "Leave type updated successfully";
-                    return RedirectToAction(nameof(Index));
+                    return NotFound(ResponseViewModel<LeaveTypeDTO>.NotFound("Leave type not found"));
                 }
-                else
-                {
-                    ModelState.AddModelError("", "Failed to update leave type");
-                    return View(model);
-                }
+
+                return Ok(ResponseViewModel<LeaveTypeDTO>.Success(dto, "Leave type retrieved successfully"));
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", "An error occurred while updating the leave type");
-                return View(model);
+                return StatusCode(500, ResponseViewModel<LeaveTypeDTO>.Failure(
+                    "An error occurred while retrieving leave type",
+                    ErrorCode.ServerError));
             }
         }
 
-        
-        // DELETE - Delete leave type (GET)
-       
+        // POST: api/LeaveType
+        [HttpPost]
         [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var leaveType = await _leaveTypeServices.GetByIdAsync(id);
-
-            if (leaveType == null)
-                return NotFound();
-
-            var model = new LeaveTypeViewModel
-            {
-                LeaveTypeID = leaveType.LeaveTypeID,
-                TypeName = leaveType.TypeName,
-                DefaultBalance = leaveType.DefaultBalance
-            };
-
-            return View(model);
-        }
-
-      
-        // DELETE - Delete leave type (POST)
-      
-        [Authorize(Roles = "Admin")]
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<ActionResult<ResponseViewModel<LeaveTypeDTO>>> Create([FromBody] LeaveTypeFormViewModel model)
         {
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ResponseViewModel<LeaveTypeDTO>.ValidationError("Invalid data"));
+                }
+
+                // Map ViewModel to DTO
+                var dto = _mapper.Map<CreateLeaveTypeDTO>(model);
+
+                // Service handles DTO to Model mapping and returns DTO
+                var resultDto = await _leaveTypeServices.AddAsync(dto);
+
+                return CreatedAtAction(
+                    nameof(GetById),
+                    new { id = resultDto.LeaveTypeID },
+                    ResponseViewModel<LeaveTypeDTO>.Success(resultDto, "Leave type created successfully"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ResponseViewModel<LeaveTypeDTO>.Failure(
+                    "An error occurred while creating the leave type",
+                    ErrorCode.ServerError));
+            }
+        }
+
+        // PUT: api/LeaveType/5
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<ResponseViewModel<string>>> Update(int id, [FromBody] LeaveTypeFormViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ResponseViewModel<string>.ValidationError("Invalid data"));
+                }
+
+                var existingDto = await _leaveTypeServices.GetByIdAsync(id);
+                if (existingDto == null)
+                {
+                    return NotFound(ResponseViewModel<string>.NotFound("Leave type not found"));
+                }
+
+                // Map ViewModel to DTO
+                var dto = _mapper.Map<UpdateLeaveTypeDTO>(model);
+                dto.LeaveTypeID = id;
+
+                // Service handles DTO to Model mapping
+                var result = await _leaveTypeServices.UpdateAsync(dto);
+
+                if (!result)
+                {
+                    return BadRequest(ResponseViewModel<string>.Failure(
+                        "Failed to update leave type",
+                        ErrorCode.OperationFailed));
+                }
+
+                return Ok(ResponseViewModel<string>.Success("Leave type updated successfully"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ResponseViewModel<string>.Failure(
+                    "An error occurred while updating the leave type",
+                    ErrorCode.ServerError));
+            }
+        }
+
+        // DELETE: api/LeaveType/5
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<ResponseViewModel<string>>> Delete(int id)
+        {
+            try
+            {
+                var leaveType = await _leaveTypeServices.GetByIdAsync(id);
+                if (leaveType == null)
+                {
+                    return NotFound(ResponseViewModel<string>.NotFound("Leave type not found"));
+                }
+
                 var result = await _leaveTypeServices.DeleteAsync(id);
 
-                if (result)
+                if (!result)
                 {
-                    TempData["Success"] = "Leave type deleted successfully";
+                    return BadRequest(ResponseViewModel<string>.Failure(
+                        "Failed to delete leave type. It may be in use.",
+                        ErrorCode.OperationFailed));
                 }
-                else
-                {
-                    TempData["Error"] = "Failed to delete leave type. It may be in use.";
-                }
+
+                return Ok(ResponseViewModel<string>.Success("Leave type deleted successfully"));
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "An error occurred while deleting the leave type";
+                return StatusCode(500, ResponseViewModel<string>.Failure(
+                    "An error occurred while deleting the leave type",
+                    ErrorCode.ServerError));
             }
-
-            return RedirectToAction(nameof(Index));
         }
     }
-    }
+}

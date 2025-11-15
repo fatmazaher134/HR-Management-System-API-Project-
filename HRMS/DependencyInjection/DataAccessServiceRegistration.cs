@@ -1,9 +1,10 @@
-﻿using HRMS.Data;
+using HRMS.Data;
 using HRMS.Interfaces;
 using HRMS.Interfaces.Services;
 using HRMS.Models;
 using HRMS.Repositories;
 using HRMS.Services.Impelmentation;
+using HRMS.Services.Implementation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -66,7 +67,7 @@ public static class DataAccessServiceRegistration
         services.AddScoped<IPayslipDetailServices, PayslipDetailServices>();
         services.AddScoped<IPayslipServices, PayslipServices>();
         services.AddScoped<ISalaryComponentServices, SalaryComponentServices>();
-        services.AddScoped<IAccountService, AccountServic>();
+        services.AddScoped<IAccountService, AccountService>();
         services.Configure<IdentityOptions>(options => {
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
             options.Lockout.MaxFailedAccessAttempts = 5;
