@@ -53,7 +53,7 @@ namespace HRMS
 
             }
 
-            app.MapGet("/", () => Results.Redirect("/index.html"));
+            //app.MapGet("/", () => Results.Redirect("/index.html"));
 
             app.UseHttpsRedirection();
             app.UseAuthentication();
