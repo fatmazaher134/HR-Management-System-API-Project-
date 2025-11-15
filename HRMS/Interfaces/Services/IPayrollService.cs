@@ -4,16 +4,17 @@ namespace HRMS.Interfaces.Services
 {
     public interface IPayrollService
     {
-        Task<(bool Success, string ErrorMessage)> GeneratePayrollAsync(int month, int year);
+        Task<IEnumerable<PayslipSummaryDto>> GetAllAsync();
 
-        Task<PayslipDetailsViewModel?> GetPayslipDetailsAsync(int payslipId);
+        Task<IEnumerable<PayslipDto>> GetMyPayslipsAsync(string applicationUserId);
 
-        Task<PayslipDetailsViewModel?> GetMyPayslipDetailsAsync(int payslipId, string applicationUserId);
-        Task<IEnumerable<PayslipViewModel>> GetMyPayslipsAsync(string applicationUserId);
+        Task<PayslipDetailsDto?> GetPayslipDetailsAsync(int payslipId);
+
+        Task<PayslipDetailsDto?> GetMyPayslipDetailsAsync(int payslipId, string applicationUserId);
+
+        Task<(bool Success, string ErrorMessage)> GeneratePayrollAsync(GeneratePayrollDto dto);
         Task DeletePayslip(int id);
 
-        Task<IEnumerable<PayslipSummaryViewModel>> GetAllAsync();
 
-        
     }
 }

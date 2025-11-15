@@ -1,23 +1,26 @@
 ﻿
 using HRMS.Models;
+using Humanizer;
 
 namespace HRMS.Services.Impelmentation
 {
     public class PayrollService : IPayrollService
     {
-        private readonly IUnitOfWork _unitOfWork;
 
-        public PayrollService(IUnitOfWork unitOfWork)
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+
+        public PayrollService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper; 
         }
-
-        public async Task<(bool Success, string ErrorMessage)> GeneratePayrollAsync(int month, int year)
+        public async Task<(bool Success, string ErrorMessage)> GeneratePayrollAsync(GeneratePayrollDto dto)
         {
             try
             {
-                // 1. التحقق إذا تم إنشاء الرواتب لهذا الشهر من قبل
-                bool alreadyExists = await _unitOfWork.Payslip.IsExistAsync(p => p.Month == month && p.Year == year);
+                // استخدم dto.Month و dto.Year
+                bool alreadyExists = await _unitOfWork.Payslip.IsExistAsync(p => p.Month == dto.Month && p.Year == dto.Year);
                 if (alreadyExists)
                 {
                     return (false, "salaries for this month and year assigned before");
@@ -43,8 +46,8 @@ namespace HRMS.Services.Impelmentation
                     var payslip = new Payslip
                     {
                         EmployeeID = employee.EmployeeID,
-                        Month = month,
-                        Year = year,
+                        Month = dto.Month,
+                        Year = dto.Year,
                         GeneratedDate = DateTime.UtcNow
                     };
 
@@ -130,43 +133,49 @@ namespace HRMS.Services.Impelmentation
 
 
 
-        public async Task<PayslipDetailsViewModel?> GetPayslipDetailsAsync(int payslipId)
-        {
-            Payslip payslip = await _unitOfWork.Payslip.GetPayslipWithDetailsAsync(payslipId);
+        
 
-            if (payslip == null) return null;
-            return MapToDetailsViewModel(payslip);
+        public async Task<IEnumerable<PayslipSummaryDto>> GetAllAsync()
+        {
+            var payslips = await _unitOfWork.Payslip.FindAllAsync(includes: new[] { "Employee" });
+            return _mapper.Map<IEnumerable<PayslipSummaryDto>>(payslips);
         }
 
-        public async Task<PayslipDetailsViewModel?> GetMyPayslipDetailsAsync(int payslipId, string applicationUserId)
-        {
-            Payslip payslip = await _unitOfWork.Payslip.GetMyPayslipWithDetailsAsync(payslipId, applicationUserId);
-
-            if (payslip == null)
-            {
-                return null; // Not found, or does not belong to this user
-            }
-
-            return MapToDetailsViewModel(payslip);
-        }
-
-
-        public async Task<IEnumerable<PayslipViewModel>> GetMyPayslipsAsync(string applicationUserId)
+        public async Task<IEnumerable<PayslipDto>> GetMyPayslipsAsync(string applicationUserId)
         {
             var payslips = await _unitOfWork.Payslip.FindAllAsync(
                 criteria: p => p.Employee.ApplicationUserId == applicationUserId,
                 includes: new[] { "Employee" }
             );
+            return _mapper.Map<IEnumerable<PayslipDto>>(payslips);
+        }
 
-            return payslips.Select(p => new PayslipViewModel
+        public async Task<PayslipDetailsDto?> GetPayslipDetailsAsync(int payslipId)
+        {
+            Payslip payslip = await _unitOfWork.Payslip.GetPayslipWithDetailsAsync(payslipId); 
+            if (payslip == null) return null;
+
+            return _mapper.Map<PayslipDetailsDto>(payslip);
+        }
+
+        public async Task<PayslipDetailsDto?> GetMyPayslipDetailsAsync(int payslipId, string applicationUserId)
+        {
+            Payslip payslip = await _unitOfWork.Payslip.GetMyPayslipWithDetailsAsync(payslipId, applicationUserId); // (افترض أن هذه الميثود موجودة في الريبو)
+            if (payslip == null) return null;
+
+            return _mapper.Map<PayslipDetailsDto>(payslip);
+        }
+
+
+        public async Task DeletePayslip(int id)
+        {
+            Payslip payslip = await _unitOfWork.Payslip.GetByIdAsync(id);
+            if (payslip == null)
             {
-                PayslipID = p.PayslipID,
-                EmployeeName = p.Employee?.FirstName + " " + p.Employee?.LastName,
-                Month = p.Month,
-                Year = p.Year,
-                NetSalary = p.NetSalary,
-                PayDate = p.GeneratedDate
-            });
+                throw new KeyNotFoundException("Payslip not found");
+            }
+            await _unitOfWork.Payslip.DeleteAsync(payslip);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         private PayslipDetailsViewModel MapToDetailsViewModel(Payslip payslip)
@@ -191,28 +200,6 @@ namespace HRMS.Services.Impelmentation
             };
         }
 
-        public async Task DeletePayslip(int id)
-        {
-            Payslip payslip = await _unitOfWork.Payslip.GetByIdAsync(id);
-            if (payslip == null) {
-                throw new KeyNotFoundException("Payslip not found");
-            }
-            await _unitOfWork.Payslip.DeleteAsync(payslip);
-            await _unitOfWork.SaveChangesAsync();
-        }
-
-        public async Task<IEnumerable<PayslipSummaryViewModel>> GetAllAsync()
-        {
-            var payslips = await _unitOfWork.Payslip.FindAllAsync(includes: ["Employee"]);
-            return payslips.Select(p => new PayslipSummaryViewModel
-            {
-                PayslipID = p.PayslipID,
-                EmployeeFullName = $"{p.Employee?.FirstName} {p.Employee?.LastName}",
-                Month = p.Month,
-                Year = p.Year,
-                NetSalary = p.NetSalary,
-                GeneratedDate = p.GeneratedDate
-            });
-        }
+        
     }
 }
