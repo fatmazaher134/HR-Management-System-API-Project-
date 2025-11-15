@@ -492,4 +492,12 @@ $RECYCLE.BIN/
 /appsettings.Development.json
 
 
+<<<<<<< HEAD
 /HRMS/appsettings.json
+=======
+
+# /HRMS/Program.cs
+# /HRMS/appsetting.json
+
+# /HRMS/appsettings.json
+>>>>>>> EmployeeBranch

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
 	  
@@ -18,8 +18,5 @@
 		</PackageReference>
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.1" />
-	</ItemGroup>
-	<ItemGroup>
-	  <Folder Include="DTOs\" />
 	</ItemGroup>
 </Project>
