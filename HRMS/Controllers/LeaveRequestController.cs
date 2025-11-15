@@ -10,7 +10,7 @@ namespace HRMS.Controllers.Api
 {
     [ApiController]
     [Route("api/LeaveRequest")]
-    //[Authorize]
+    [Authorize] 
     public class LeaveRequestController : ControllerBase
     {
         private readonly ILeaveRequestServices _service;
@@ -28,26 +28,28 @@ namespace HRMS.Controllers.Api
         }
 
         [HttpGet("GetLeaveRequests/")]
-        //[Authorize(Roles = "Admin,Employee,HR")]
+        [Authorize(Roles = "Admin,Employee,HR")] 
         public async Task<ActionResult<IEnumerable<LeaveRequestDto>>> GetLeaveRequests()
         {
-            // var user = await _userManager.GetUserAsync(User);
+            var user = await _userManager.GetUserAsync(User); 
+            if (user == null) return Unauthorized(); 
+
             IEnumerable<LeaveRequestDto> dtos;
 
-            // if (User.IsInRole("HR") || User.IsInRole("Admin"))
-            // {
-            dtos = await _service.GetAllAsync();
-            // }
-            // else // Employee
-            // {
-            //     dtos = await _service.GetMyRequestsAsync(user.Id);
-            // }
+            if (User.IsInRole("HR") || User.IsInRole("Admin")) 
+            {
+                dtos = await _service.GetAllAsync();
+            }
+            else 
+            {
+                dtos = await _service.GetMyRequestsAsync(user.Id); 
+            }
 
             return Ok(dtos);
         }
 
         [HttpGet("LeaveTypes")]
-        //[Authorize(Roles = "Admin,HR,Employee")]
+        [Authorize(Roles = "Admin,HR,Employee")] 
         public async Task<IActionResult> GetLeaveTypes()
         {
             var leaveTypes = await _unitOfWork.LeaveType.GetAllAsync();
@@ -55,7 +57,7 @@ namespace HRMS.Controllers.Api
         }
 
         [HttpPost]
-        //[Authorize(Roles = "Admin,HR,Employee")]
+        [Authorize(Roles = "Admin,HR,Employee")] 
         public async Task<IActionResult> CreateLeaveRequest([FromBody] CreateLeaveRequestDto createDto)
         {
             if (!ModelState.IsValid)
@@ -63,11 +65,11 @@ namespace HRMS.Controllers.Api
                 return BadRequest(ModelState);
             }
 
-            // var user = await _userManager.GetUserAsync(User);
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized(); 
 
-            var tempTestUserId = "YOUR_TEST_USER_ID_FROM_DATABASE";
-
-            var result = await _service.CreateAsync(createDto, tempTestUserId);
+          
+            var result = await _service.CreateAsync(createDto, user.Id);
 
             if (!result)
             {
@@ -78,46 +80,44 @@ namespace HRMS.Controllers.Api
         }
 
         [HttpPut("Approve/{id}")]
-        //[Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR")] 
         public async Task<IActionResult> Approve(int id)
         {
-            // var user = await _userManager.GetUserAsync(User);
-            // var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == user.Id);
-            // if (emp == null) return Unauthorized();
+            var user = await _userManager.GetUserAsync(User); 
+            var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == user.Id); 
+            if (emp == null) return Unauthorized(); 
 
-            var tempTestHrEmployeeId = 1; // افترض أن EmployeeID 1 هو HR
 
-            var result = await _service.ApproveAsync(id, tempTestHrEmployeeId);
+            var result = await _service.ApproveAsync(id, emp.EmployeeID); 
             if (!result) return NotFound(new { message = "Request not found." });
 
             return Ok(new { message = "Request Approved" });
         }
 
         [HttpPut("Reject/{id}")]
-        //[Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR")] 
         public async Task<IActionResult> Reject(int id, [FromBody] string? comments)
         {
-            // var user = await _userManager.GetUserAsync(User);
-            // var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == user.Id);
-            // if (emp == null) return Unauthorized();
+            var user = await _userManager.GetUserAsync(User); 
+            var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == user.Id); 
+            if (emp == null) return Unauthorized(); 
 
-            var tempTestHrEmployeeId = 1; // افترض أن EmployeeID 1 هو HR
 
-            var result = await _service.RejectAsync(id, tempTestHrEmployeeId, comments ?? "Rejected");
+            var result = await _service.RejectAsync(id, emp.EmployeeID, comments ?? "Rejected"); 
             if (!result) return NotFound(new { message = "Request not found." });
 
             return Ok(new { message = "Request Rejected" });
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Admin,HR,Employee")]
+        [Authorize(Roles = "Admin,HR,Employee")] 
         public async Task<IActionResult> Delete(int id)
         {
-            // var userId = _userManager.GetUserId(User);
+            var userId = _userManager.GetUserId(User); 
+            if (string.IsNullOrEmpty(userId)) return Unauthorized(); 
 
-            var tempTestUserId = "YOUR_TEST_USER_ID_FROM_DATABASE";
 
-            var result = await _service.DeleteAsync(id, tempTestUserId);
+            var result = await _service.DeleteAsync(id, userId); 
 
             if (!result)
             {

@@ -27,14 +27,13 @@ namespace HRMS.Services.Impelmentation
 
         public async Task<IEnumerable<LeaveRequestDto>> GetMyRequestsAsync(string userId)
         {
-            // var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == userId);
-            // if (emp == null) return Enumerable.Empty<LeaveRequestDto>();
+            var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == userId); 
+            if (emp == null) return Enumerable.Empty<LeaveRequestDto>(); 
 
-            var tempTestEmployeeId = 1; 
 
             var requests = await _unitOfWork.LeaveRequest.FindAllAsync(
-                // r => r.EmployeeID == emp.EmployeeID,
-                r => r.EmployeeID == tempTestEmployeeId, 
+                r => r.EmployeeID == emp.EmployeeID, 
+                                                     
                 includes: new[] { "LeaveType" });
 
             return _mapper.Map<IEnumerable<LeaveRequestDto>>(requests);
@@ -42,15 +41,13 @@ namespace HRMS.Services.Impelmentation
 
         public async Task<bool> CreateAsync(CreateLeaveRequestDto model, string userId)
         {
-            // var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == userId);
-            // if (emp == null) return false;
+            var emp = await _unitOfWork.Employee.FindAsync(e => e.ApplicationUserId == userId); 
+            if (emp == null) return false; 
 
-            var tempTestEmployeeId = 1; 
 
             var entity = _mapper.Map<LeaveRequest>(model);
 
-            // entity.EmployeeID = emp.EmployeeID;
-            entity.EmployeeID = tempTestEmployeeId; 
+            entity.EmployeeID = emp.EmployeeID; 
             entity.Status = "Pending";
             entity.RequestDate = DateTime.UtcNow;
 
@@ -102,11 +99,9 @@ namespace HRMS.Services.Impelmentation
 
         public async Task<bool> DeleteAsync(int id, string userId)
         {
-            // var request = await _unitOfWork.LeaveRequest
-            //     .FindAsync(lr => lr.LeaveRequestID == id && lr.Employee.ApplicationUserId == userId);
+            var request = await _unitOfWork.LeaveRequest 
+                .FindAsync(lr => lr.LeaveRequestID == id && lr.Employee.ApplicationUserId == userId); 
 
-            
-            var request = await _unitOfWork.LeaveRequest.GetByIdAsync(id);
 
             if (request == null)
                 return false;

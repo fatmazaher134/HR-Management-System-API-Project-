@@ -1,4 +1,5 @@
 ﻿using HRMS.DTOs.SalaryComponent;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HRMS.Controllers
@@ -30,7 +31,7 @@ namespace HRMS.Controllers
         }
 
         [HttpPost]
-        // [Authorize(Roles = "Admin")] 
+         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateSalaryComponentDto model)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -40,7 +41,7 @@ namespace HRMS.Controllers
         }
 
         [HttpPut("{id}")]
-        // [Authorize(Roles = "Admin")] 
+         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateSalaryComponentDto model)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -52,7 +53,7 @@ namespace HRMS.Controllers
         }
 
         [HttpDelete("{id}")]
-        // [Authorize(Roles = "Admin")] 
+         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var model = await _service.GetByIdAsync(id);
