@@ -493,7 +493,7 @@ $RECYCLE.BIN/
 
 
 
-/HRMS/Program.cs
-/HRMS/appsetting.json
+# /HRMS/Program.cs
+# /HRMS/appsetting.json
 
-/HRMS/appsettings.json
+# /HRMS/appsettings.json
