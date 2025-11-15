@@ -1,4 +1,6 @@
 ﻿
+using AutoMapper;
+using HRMS.DTOs.Employee;
 using HRMS.Interfaces;
 using HRMS.Interfaces.Services;
 using HRMS.Models;
@@ -9,45 +11,51 @@ namespace HRMS.Services.Impelmentation
 {
     public class EmployeeServices : IEmployeeServices
     {
-        private readonly IUnitOfWork _unitOfWork;
-
-        //public EmployeeServices(IUnitOfWork unitOfWork)
-        //{
-        //    _unitOfWork = unitOfWork;
-        //}
-
-        //public async Task<IEnumerable<Employee>> GetAllAsync()
-        //{
-        //    // بنرجع الموظفين النشطين فقط (Soft Delete)
-        //    return await _unitOfWork.Employee
-        //        .FindAllAsync(e => e.IsActive, new[] { "Department", "JobTitle" });
-
         private readonly IEmployeeRepository _empRepo;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IMapper _mapper;
 
-        public EmployeeServices(IEmployeeRepository empRepo, IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+        public EmployeeServices(
+            IEmployeeRepository empRepo,
+            IUnitOfWork unitOfWork,
+            UserManager<ApplicationUser> userManager,
+            IMapper mapper)
         {
             _empRepo = empRepo;
             _unitOfWork = unitOfWork;
             _userManager = userManager;
-
+            _mapper = mapper;
         }
 
-
-        public async Task<IEnumerable<Employee>> GetAllAsync()
+        public async Task<IEnumerable<EmployeeListDTO>> GetAllAsync()
         {
             var includes = new string[] { "Department", "JobTitle", "ApplicationUser" };
-            return await _empRepo.FindAllAsync(
+            var employees = await _empRepo.FindAllAsync(
                 criteria: e => e.IsActive,
                 includes: includes
             );
 
-            //var includes = new string[] { "Department", "JobTitle" };            
-            //return await _empRepo.FindAllAsync(criteria: null, includes: includes);
-
+            // Map Model to DTO
+            return _mapper.Map<IEnumerable<EmployeeListDTO>>(employees);
         }
 
-        public async Task<IdentityResult> RegisterEmployeeAsync(EmployeeFormViewModel employee)
+        public async Task<EmployeeDetailsDTO?> GetByIdAsync(int id)
+        {
+            var includes = new string[] { "Department", "JobTitle", "ApplicationUser" };
+            var employee = await _empRepo.FindAsync(
+                criteria: e => e.EmployeeID == id && e.IsActive,
+                includes: includes
+            );
+
+            if (employee == null)
+                return null;
+
+            // Map Model to DTO
+            return _mapper.Map<EmployeeDetailsDTO>(employee);
+        }
+
+        public async Task<IdentityResult> RegisterEmployeeAsync(CreateEmployeeDTO dto)
         {
             using (var transaction = _unitOfWork.BeginTransaction())
             {
@@ -56,163 +64,77 @@ namespace HRMS.Services.Impelmentation
                     // Create Application User
                     var appUser = new ApplicationUser
                     {
-                        UserName = employee.Email,
-                        Email = employee.Email,
-                        FullName = $"{employee.FirstName} {employee.LastName}",
-                        Address = employee.Address,
-                        PhoneNumber = employee.PhoneNumber
+                        UserName = dto.Email,
+                        Email = dto.Email,
+                        FullName = $"{dto.FirstName} {dto.LastName}",
+                        Address = dto.Address,
+                        PhoneNumber = dto.PhoneNumber
                     };
-                    var result = await _userManager.CreateAsync(appUser, employee.Password);
+
+                    var result = await _userManager.CreateAsync(appUser, dto.Password);
+
                     if (result.Succeeded)
                     {
-                        // 2. Hard-code the "Employee" role
-                        // (Ensure this role exists in your database!)
+                        // Add to Employee role
                         await _userManager.AddToRoleAsync(appUser, "Employee");
 
-                        // Create Employee
-                        var emp = new Employee
-                        {
-                            FirstName = employee.FirstName,
-                            LastName = employee.LastName,
-                            Email = employee.Email,
-                            PhoneNumber = employee.PhoneNumber,
-                            Address = employee.Address,
-                            BasicSalary = employee.BasicSalary,
-                            DepartmentID = employee.DepartmentID,
-                            JobTitleID = employee.JobTitleID,
-                            DateOfBirth = employee.DateOfBirth,
-                            HireDate = DateTime.Now,
-                            IsActive = true,
-                            ApplicationUserId = appUser.Id
-                        };
-                        await _empRepo.AddAsync(emp);
+                        // Map DTO to Model
+                        var employee = _mapper.Map<Employee>(dto);
+                        employee.ApplicationUserId = appUser.Id;
+                        employee.HireDate = DateTime.UtcNow;
+                        employee.IsActive = true;
+
+                        await _empRepo.AddAsync(employee);
                         await _unitOfWork.SaveChangesAsync();
-                        await transaction.CommitAsync();
+                        _unitOfWork.Commit();
                     }
+
                     return result;
                 }
-                catch    
+                catch
                 {
-                     _unitOfWork.Rollback();
-                    return IdentityResult.Failed(new IdentityError { Description = "An error occurred while registering the employee." });
+                    _unitOfWork.Rollback();
+                    return IdentityResult.Failed(new IdentityError
+                    {
+                        Description = "An error occurred while registering the employee."
+                    });
                 }
             }
         }
 
-        public async Task<Employee?> GetByIdAsync(int id)
-        {
-            var includes = new string[] { "Department", "JobTitle", "ApplicationUser" };
-            return await _empRepo.FindAsync(
-                criteria: e => e.EmployeeID == id && e.IsActive,
-                includes: includes
-            );
-        }
-
-        public async Task<Employee> AddAsync(Employee employee)
-        {
-            employee.IsActive = true;
-            employee.HireDate = employee.HireDate == default ? DateTime.Now : employee.HireDate;
-            //await _unitOfWork.Employee.AddAsync(employee);
-            //await _unitOfWork.SaveChangesAsync();
-            //return employee;
-
-            return await _empRepo.AddAsync(employee);
-
-        }
-
-        public async Task<bool> UpdateAsync(Employee employee)
+        public async Task<bool> UpdateAsync(UpdateEmployeeDTO dto)
         {
             try
             {
-                var existing = await _empRepo.GetByIdAsync(employee.EmployeeID);
+                var existing = await _empRepo.GetByIdAsync(dto.EmployeeID);
                 if (existing == null || !existing.IsActive)
                     return false;
 
-                await _empRepo.UpdateEmployeeAsync(employee);
+                // Map DTO to existing Model
+                _mapper.Map(dto, existing);
+
+                await _empRepo.UpdateEmployeeAsync(existing);
                 return true;
             }
             catch
             {
                 return false;
             }
-
-            //var existing = await _unitOfWork.Employee.GetByIdAsync(employee.EmployeeID);
-            //if (existing == null || !existing.IsActive)
-            //    return false;
-
-            //// تحديث البيانات المطلوبة فقط
-            //existing.FirstName = employee.FirstName;
-            //existing.LastName = employee.LastName;
-            //existing.Email = employee.Email;
-            //existing.PhoneNumber = employee.PhoneNumber;
-            //existing.BasicSalary = employee.BasicSalary;
-            //existing.Address = employee.Address;
-            //existing.DepartmentID = employee.DepartmentID;
-            //existing.JobTitleID = employee.JobTitleID;
-            //existing.DateOfBirth = employee.DateOfBirth;
-
-            //await _unitOfWork.Employee.UpdateAsync(existing);
-            //await _unitOfWork.SaveChangesAsync();
-            //return true;
-
-
-
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> UpdateBasicInfoAsync(int employeeId, UpdateEmployeeBasicInfoDTO dto)
         {
             try
             {
-                // Soft Delete: تغيير IsActive إلى false
-                await _empRepo.SoftDeleteAsync(id);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-            //var employee = await _empRepo.GetByIdAsync(id);
-            //if (employee == null)
-            //{
-            //    return false;
-            //}
-
-            //try
-            //{
-            //    await _empRepo.DeleteAsync(employee);
-            //    return true;
-            //}
-            //catch
-            //{
-            //    return false;
-            //}
-        }
-
-
-        public async Task<Employee?> GetByUserIdAsync(string userId)
-        {
-            // return emp based on UserId
-            var includes = new string[] { "Department", "JobTitle", "ApplicationUser" };
-            return await _empRepo.FindAsync(
-                criteria: e => e.ApplicationUserId == userId && e.IsActive,
-                includes: includes
-            );
-        }
-
-        public async Task<bool> UpdateBasicInfoAsync(int employeeId, EmployeeEditBasicInfoViewModel model)
-        {
-            try
-            {
-                // Cuurent Emp
                 var employee = await _empRepo.GetByIdAsync(employeeId);
                 if (employee == null || !employee.IsActive)
                     return false;
 
-                // Edit ON Allowed Baseic Info
-                employee.FirstName = model.FirstName;
-                employee.LastName = model.LastName;
-                employee.PhoneNumber = model.PhoneNumber;
-                employee.Address = model.Address;
+                // Map DTO to Model (only allowed fields)
+                employee.FirstName = dto.FirstName;
+                employee.LastName = dto.LastName;
+                employee.PhoneNumber = dto.PhoneNumber;
+                employee.Address = dto.Address;
 
                 await _empRepo.UpdateAsync(employee);
                 await _unitOfWork.SaveChangesAsync();
@@ -225,38 +147,54 @@ namespace HRMS.Services.Impelmentation
             }
         }
 
-
-
-
-
-        public async Task<IEnumerable<Employee>> GetByDepartmentIdAsync(int departmentId)
+        public async Task<bool> DeleteAsync(int id)
         {
-            return await _empRepo.GetEmployeesByDepartmentAsync(departmentId);
+            try
+            {
+                await _empRepo.SoftDeleteAsync(id);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
+        public async Task<MyProfileDTO?> GetByUserIdAsync(string userId)
+        {
+            var includes = new string[] { "Department", "JobTitle", "ApplicationUser" };
+            var employee = await _empRepo.FindAsync(
+                criteria: e => e.ApplicationUserId == userId && e.IsActive,
+                includes: includes
+            );
 
+            if (employee == null)
+                return null;
 
+            // Map Model to DTO
+            return _mapper.Map<MyProfileDTO>(employee);
+        }
+
+        public async Task<IEnumerable<EmployeeListDTO>> GetByDepartmentIdAsync(int departmentId)
+        {
+            var employees = await _empRepo.GetEmployeesByDepartmentAsync(departmentId);
+
+            // Map Model to DTO
+            return _mapper.Map<IEnumerable<EmployeeListDTO>>(employees);
+        }
 
         public async Task<decimal> GetTotalSalaryAsync(int departmentId)
         {
             var employees = await _empRepo.FindAllAsync(
-                    criteria: e => e.DepartmentID == departmentId && e.IsActive,
-                    includes: null
-                );
+                criteria: e => e.DepartmentID == departmentId && e.IsActive,
+                includes: null
+            );
 
-            if (employees.Any())
-            {
-                return employees.Sum(e => e.BasicSalary);
-            }
-
-            return 0;
-
+            return employees.Any() ? employees.Sum(e => e.BasicSalary) : 0;
         }
-
 
         public async Task<bool> IsEmailExistsAsync(string email, int? excludeEmployeeId = null)
         {
-
             if (excludeEmployeeId.HasValue)
             {
                 return await _empRepo.IsExistAsync(

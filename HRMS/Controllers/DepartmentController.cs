@@ -28,9 +28,17 @@ namespace HRMS.Controllers
         {
             var dtos = await _deptService.GetAllAsync();
 
+<<<<<<< HEAD
             var viewModels = _mapper.Map<IEnumerable<DepartmentViewModel>>(dtos);
 
             return Ok(viewModels);
+=======
+            return employees.Select(e => new SelectListItem
+            {
+                Value = e.EmployeeID.ToString(),
+                Text = e.FullName
+            });
+>>>>>>> EmployeeBranch
         }
 
         // GET: /api/department/5
