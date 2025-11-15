@@ -7,6 +7,7 @@ namespace HRMS.Controllers
     //[Authorize(Roles = "Admin,HR,Employee")]
     [Route("api/Department")] 
     [ApiController]
+    [Authorize]
     public class DepartmentController : ControllerBase
     {
         private readonly IDepartmentServices _deptService;
